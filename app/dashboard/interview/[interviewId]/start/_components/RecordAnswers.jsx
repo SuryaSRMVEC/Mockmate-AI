@@ -4,7 +4,7 @@ import Webcam from "react-webcam";
 import Image from "next/image";
 import { Button } from "../../../../../../components/ui/button";
 import useSpeechToText from "react-hook-speech-to-text";
-import { Mic, StopCircle, UserCircle2 } from "lucide-react";
+import { Mic, StopCircle } from "lucide-react";
 import { toast } from "sonner";
 import { chatSession } from "../../../../../../utils/GeminAImodel";
 import { db } from "../../../../../../utils/db";
@@ -16,9 +16,9 @@ function RecordAnswers({ mockInterviewQuestion, activeQuestionIndex, interviewDa
   const [userAnswer, setUserAnswer] = useState("");
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
-  const [webcamActive, setWebcamActive] = useState(false); // For webcam compulsion
-  const [introductionFeedback, setIntroductionFeedback] = useState(""); // Store introduction feedback
-  const [isIntroductionDone, setIsIntroductionDone] = useState(false); // Track if intro is completed
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [introductionFeedback, setIntroductionFeedback] = useState("");
+  const [isIntroductionDone, setIsIntroductionDone] = useState(false);
 
   const {
     results,
@@ -64,30 +64,44 @@ function RecordAnswers({ mockInterviewQuestion, activeQuestionIndex, interviewDa
     try {
       setLoading(true);
 
+      const email = user?.primaryEmailAddress?.emailAddress;
+
       const question = !isIntroductionDone
         ? "Introduce yourself"
         : mockInterviewQuestion[activeQuestionIndex]?.question;
 
-      const email = user?.primaryEmailAddress?.emailAddress;
-
-      // AI Assistant's feedback prompt
-      const feedbackPrompt = `Question: ${question}, User Answer: ${userAnswer}, Provide a response as an AI interviewer with constructive feedback in 2–3 sentences.`;
+      // Introduction-specific prompt
+      const feedbackPrompt = !isIntroductionDone
+        ? `User Response: ${userAnswer}. Provide a detailed feedback and generate a correct answer for the user's self-introduction. Respond strictly in JSON format like this: { "feedback": "Your feedback here", "correctAnswer": "A sample introduction here", "rating": 8 }.`
+        : `Question: ${question}, User Response: ${userAnswer}. Provide feedback, a correct answer, and a rating (1–10) for the user's response. Respond strictly in JSON format like this: { "feedback": "Your feedback here", "correctAnswer": "Correct answer here", "rating": 7 }.`;
 
       const result = await chatSession.sendMessage(feedbackPrompt);
-      const aiFeedback = await result.response.text();
+      const rawText = await result.response.text();
+
+      console.log("🧠 AI Raw Text:", rawText);
+
+      // Clean and parse the JSON response
+      const cleanedText = rawText.replace(/```json|```/g, "").trim();
+      const JsonFeedbackResp = JSON.parse(cleanedText);
+
+      const feedback = JsonFeedbackResp?.feedback || "No feedback provided.";
+      const correctAnswer = JsonFeedbackResp?.correctAnswer || "No correct answer provided.";
+      const rating = JsonFeedbackResp?.rating || 0;
 
       if (!isIntroductionDone) {
-        // Update state to show introduction feedback
-        setIntroductionFeedback(aiFeedback);
-        setIsIntroductionDone(true); // Mark introduction as completed
+        // Store introduction feedback and mark introduction as done
+        setIntroductionFeedback(feedback);
+        setIsIntroductionDone(true);
         toast.success("Introduction completed! You can now proceed to the interview questions.");
       } else {
         // Save the user's answer to the database for actual questions
         await db.insert(UserAnswer).values({
           mockIdRef: interviewData?.mockId,
           question,
+          correctAnswer,
           userAns: userAnswer,
-          feedback: aiFeedback,
+          feedback,
+          rating,
           userEmail: email,
           createdAt: moment().format("DD-MM-YYYY"),
         });
@@ -110,15 +124,16 @@ function RecordAnswers({ mockInterviewQuestion, activeQuestionIndex, interviewDa
     <div className="flex flex-col items-center justify-center space-y-8 animate-fade-in">
       {/* AI Assistant Avatar */}
       <div className="flex flex-col items-center">
-  <Image 
-    src="/aiassistant.png" 
-    width={96} // This corresponds to `w-24` (96px) 
-    height={96} // This corresponds to `h-24` (96px)
-    alt="AI Interviewer Avatar" 
-    className="rounded-full" // Optional: Add a rounded style if needed
-  />
-  <p className="text-md text-purple-700 font-semibold">AI Interviewer</p>
-</div>
+        <Image
+          src="/aiassistant.png"
+          width={96} // This corresponds to `w-24` (96px)
+          height={96} // This corresponds to `h-24` (96px)
+          alt="AI Interviewer Avatar"
+          className="rounded-full" // Optional: Add a rounded style if needed
+        />
+        <p className="text-md text-purple-700 font-semibold">AI Interviewer</p>
+      </div>
+
       {/* Webcam Section */}
       <div className="relative flex flex-col justify-center items-center rounded-2xl p-5 border bg-gradient-to-br from-purple-900 to-black shadow-lg">
         <Image
