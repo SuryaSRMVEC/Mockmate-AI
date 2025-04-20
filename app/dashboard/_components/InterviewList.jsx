@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../../utils/db";
 import { MockInterview } from "../../../utils/schema";
 import { desc, eq } from "drizzle-orm";
-import InterviewCard from "./InterviewCard";
+import InterviewCard from "./Interviewcard";
 
 function InterviewList() {
   const { user } = useUser();
