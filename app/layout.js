@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-  display: "swap", // Ensures consistent font loading
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -18,18 +18,20 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Mockmate AI Interview",
   description: "An AI-powered interview platform",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Toaster />
-        {children}
-      </body>
-    </html>
+      <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <Toaster />
+          {children}
+        </body>
+      </html>
     </ClerkProvider>
   );
 }
