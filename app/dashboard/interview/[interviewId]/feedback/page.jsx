@@ -36,7 +36,7 @@ function Feedback() {
 
       // Calculate overall rating
       if (result.length > 0) {
-        const totalRating = result.reduce((sum, item) => sum + item.rating, 0);
+        const totalRating = result.reduce((sum, item) => sum + parseFloat(item.rating || 0), 0);
         const averageRating = (totalRating / result.length).toFixed(1); // Round to 1 decimal place
         setOverallRating(averageRating);
       }
@@ -74,16 +74,16 @@ function Feedback() {
               <CollapsibleContent>
                 <div className='p-4 bg-white border-t border-purple-100 rounded-b-xl flex flex-col gap-3 text-sm'>
                   <div className='text-purple-700'>
-                    <strong>Rating:</strong> {item.rating}
+                    <strong>Rating:</strong> {item.rating || 'N/A'}
                   </div>
                   <div className='bg-red-50 p-3 rounded-lg text-red-800 border border-red-200'>
-                    <strong>Your Answer:</strong> {item.userAns}
+                    <strong>Your Answer:</strong> {item.userAns || 'N/A'}
                   </div>
                   <div className='bg-green-50 p-3 rounded-lg text-green-800 border border-green-200'>
-                    <strong>Correct Answer:</strong> {item.correctAnswer}
+                    <strong>Correct Answer:</strong> {item.correctAnswer || 'N/A'}
                   </div>
                   <div className='bg-blue-50 p-3 rounded-lg text-blue-800 border border-blue-200'>
-                    <strong>Feedback:</strong> {item.feedback}
+                    <strong>Feedback:</strong> {item.feedback || 'N/A'}
                   </div>
                 </div>
               </CollapsibleContent>
